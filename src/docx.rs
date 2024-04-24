@@ -11,27 +11,22 @@ use std::io::Cursor;
 use std::path::{Path, PathBuf};
 use zip::read::ZipFile;
 
-use doc::{HasKind, MsDoc};
+use crate::document::{Document, DocumentKind};
 
 pub struct Docx {
-    path: PathBuf,
     data: Cursor<String>,
 }
 
-impl HasKind for Docx {
-    fn kind(&self) -> &'static str {
-        "Word Document"
+impl Document<Docx> for Docx {
+    fn kind(&self) -> DocumentKind {
+        DocumentKind::Docx
     }
 
-    fn ext(&self) -> &'static str {
-        "docx"
-    }
-}
-
-impl MsDoc<Docx> for Docx {
-    fn open<P: AsRef<Path>>(path: P) -> io::Result<Docx> {
-        let file = File::open(path.as_ref())?;
-        let mut archive = ZipArchive::new(file)?;
+    fn from_reader<R>(reader: R) -> io::Result<Docx>
+    where
+        R: Read + io::Seek,
+    {
+        let mut archive = ZipArchive::new(reader)?;
 
         let mut xml_data = String::new();
 
@@ -81,9 +76,7 @@ impl MsDoc<Docx> for Docx {
                 }
             }
         }
-
         Ok(Docx {
-            path: path.as_ref().to_path_buf(),
             data: Cursor::new(txt.join("")),
         })
     }

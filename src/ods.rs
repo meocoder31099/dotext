@@ -11,30 +11,24 @@ use std::io::Cursor;
 use std::path::{Path, PathBuf};
 use zip::read::ZipFile;
 
-use doc;
-use doc::{HasKind, OpenOfficeDoc};
+use crate::document::{open_doc_read_data, Document, DocumentKind};
 
 pub struct Ods {
-    path: PathBuf,
     data: Cursor<String>,
 }
 
-impl HasKind for Ods {
-    fn kind(&self) -> &'static str {
-        "Open Office Spreadsheet"
+impl Document<Ods> for Ods {
+    fn kind(&self) -> DocumentKind {
+        DocumentKind::Ods
     }
 
-    fn ext(&self) -> &'static str {
-        "ods"
-    }
-}
-
-impl OpenOfficeDoc<Ods> for Ods {
-    fn open<P: AsRef<Path>>(path: P) -> io::Result<Ods> {
-        let text = doc::open_doc_read_data(path.as_ref(), "content.xml", &["text:p"])?;
+    fn from_reader<R>(reader: R) -> io::Result<Ods>
+    where
+        R: Read + io::Seek,
+    {
+        let text = open_doc_read_data(reader, "content.xml", &["text:p"])?;
 
         Ok(Ods {
-            path: path.as_ref().to_path_buf(),
             data: Cursor::new(text),
         })
     }

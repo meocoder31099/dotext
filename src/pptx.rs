@@ -11,27 +11,22 @@ use std::io::Cursor;
 use std::path::{Path, PathBuf};
 use zip::read::ZipFile;
 
-use doc::{HasKind, MsDoc};
+use crate::document::{Document, DocumentKind};
 
 pub struct Pptx {
-    path: PathBuf,
     data: Cursor<String>,
 }
 
-impl HasKind for Pptx {
-    fn kind(&self) -> &'static str {
-        "Power Point"
+impl Document<Pptx> for Pptx {
+    fn kind(&self) -> DocumentKind {
+        DocumentKind::Pptx
     }
 
-    fn ext(&self) -> &'static str {
-        "pptx"
-    }
-}
-
-impl MsDoc<Pptx> for Pptx {
-    fn open<P: AsRef<Path>>(path: P) -> io::Result<Pptx> {
-        let file = File::open(path.as_ref())?;
-        let mut archive = ZipArchive::new(file)?;
+    fn from_reader<R>(reader: R) -> io::Result<Pptx>
+    where
+        R: Read + io::Seek,
+    {
+        let mut archive = ZipArchive::new(reader)?;
 
         let mut xml_data = String::new();
 
@@ -86,7 +81,6 @@ impl MsDoc<Pptx> for Pptx {
         }
 
         Ok(Pptx {
-            path: path.as_ref().to_path_buf(),
             data: Cursor::new(txt.join("")),
         })
     }

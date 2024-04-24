@@ -1,6 +1,5 @@
 #![allow(unused_imports, dead_code, unused_must_use)]
 
-extern crate quick_xml as xml;
 /**
  * Copyright 2017 Robin Syihab. All rights reserved.
  *
@@ -21,9 +20,10 @@ extern crate quick_xml as xml;
  * IN THE SOFTWARE.
  *
  */
+extern crate quick_xml as xml;
 extern crate zip;
 
-pub mod doc;
+pub mod document;
 pub mod docx;
 pub mod odp;
 pub mod ods;
@@ -31,10 +31,43 @@ pub mod odt;
 pub mod pptx;
 pub mod xlsx;
 
-pub use doc::MsDoc;
+pub use document::Document;
+pub use document::DocumentKind;
 pub use docx::Docx;
 pub use odp::Odp;
 pub use ods::Ods;
 pub use odt::Odt;
 pub use pptx::Pptx;
 pub use xlsx::Xlsx;
+
+/// This function tries to extract the text from a stream.
+/// The filename extension is used to detect the right extraction method.
+pub fn extract<R>(reader: R, filename: &str) -> std::io::Result<String>
+where
+    R: std::io::Read + std::io::Seek,
+{
+    use std::str::FromStr;
+
+    let extension = filename
+        .rsplit_once('.')
+        .map(|(_, e)| e)
+        .ok_or_else(|| std::io::Error::new(std::io::ErrorKind::Other, "No file extension found"))?;
+
+    DocumentKind::from_str(extension)?.extract(reader)
+}
+
+/// This function tries to extract the text from a file.
+/// The filename extension is used to detect the right extraction method.
+pub fn extract_file<P>(path: P) -> std::io::Result<String>
+where
+    P: AsRef<std::path::Path>,
+{
+    let filename = path
+        .as_ref()
+        .file_name()
+        .and_then(|s| s.to_str())
+        .ok_or_else(|| std::io::Error::new(std::io::ErrorKind::Other, "No filename found"))?;
+
+    let file = std::fs::File::open(path.as_ref())?;
+    extract(file, filename)
+}

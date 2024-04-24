@@ -20,16 +20,11 @@
  */
 extern crate dotext;
 
-use dotext::*;
-
 use std::env;
-use std::io::Read;
 
 fn main() {
     if let Some(path) = env::args().nth(1) {
-        let mut file = Docx::open(path).expect("Cannot open file");
-        let mut isi = String::new();
-        let _ = file.read_to_string(&mut isi);
+        let isi = dotext::extract_file(path).unwrap();
         println!("CONTENT:");
         println!("----------BEGIN----------");
         println!("{}", isi);

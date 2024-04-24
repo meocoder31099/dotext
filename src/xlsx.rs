@@ -11,30 +11,24 @@ use std::io::Cursor;
 use std::path::{Path, PathBuf};
 use zip::read::ZipFile;
 
-use doc::{HasKind, MsDoc};
+use crate::document::{Document, DocumentKind};
 
 pub struct Xlsx {
-    path: PathBuf,
     data: Cursor<String>,
 }
 
-impl HasKind for Xlsx {
-    fn kind(&self) -> &'static str {
-        "Excel"
+impl Document<Xlsx> for Xlsx {
+    fn kind(&self) -> DocumentKind {
+        DocumentKind::Xlsx
     }
 
-    fn ext(&self) -> &'static str {
-        "xlsx"
-    }
-}
-
-impl MsDoc<Xlsx> for Xlsx {
-    fn open<P: AsRef<Path>>(path: P) -> io::Result<Xlsx> {
-        let file = File::open(path.as_ref())?;
-        let mut archive = ZipArchive::new(file)?;
+    fn from_reader<R>(reader: R) -> io::Result<Xlsx>
+    where
+        R: Read + io::Seek,
+    {
+        let mut archive = ZipArchive::new(reader)?;
 
         let mut xml_data = String::new();
-        //        let xml_data_list = Vec::new();
 
         for i in 0..archive.len() {
             let mut c_file = archive.by_index(i).unwrap();
@@ -91,7 +85,6 @@ impl MsDoc<Xlsx> for Xlsx {
         }
 
         Ok(Xlsx {
-            path: path.as_ref().to_path_buf(),
             data: Cursor::new(txt.join("")),
         })
     }
