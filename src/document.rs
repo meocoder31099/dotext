@@ -131,12 +131,12 @@ where
     if xml_data.len() > 0 {
         let mut to_read = false;
         loop {
-            match xml_reader.read_event(&mut buf) {
+            match xml_reader.read_event_into(&mut buf) {
                 Ok(Event::Start(ref e)) => {
                     for tag in tags {
-                        if e.name() == tag.as_bytes() {
+                        if e.name().as_ref() == tag.as_bytes() {
                             to_read = true;
-                            if e.name() == b"text:p" {
+                            if e.name().as_ref() == b"text:p" {
                                 txt.push("\n\n".to_string());
                             }
                             break;
@@ -145,7 +145,7 @@ where
                 }
                 Ok(Event::Text(e)) => {
                     if to_read {
-                        txt.push(e.unescape_and_decode(&xml_reader).unwrap());
+                        txt.push(e.unescape().unwrap().into_owned());
                         to_read = false;
                     }
                 }

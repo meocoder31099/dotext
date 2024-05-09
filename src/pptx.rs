@@ -46,8 +46,8 @@ impl Document<Pptx> for Pptx {
             let mut to_read = false;
             let mut xml_reader = Reader::from_str(xml_data.as_ref());
             loop {
-                match xml_reader.read_event(&mut buf) {
-                    Ok(Event::Start(ref e)) => match e.name() {
+                match xml_reader.read_event_into(&mut buf) {
+                    Ok(Event::Start(ref e)) => match e.name().as_ref() {
                         b"a:p" => {
                             to_read = true;
                             txt.push("\n".to_string());
@@ -59,7 +59,7 @@ impl Document<Pptx> for Pptx {
                     },
                     Ok(Event::Text(e)) => {
                         if to_read {
-                            let text = e.unescape_and_decode(&xml_reader).unwrap();
+                            let text = e.unescape().unwrap().into_owned();
                             txt.push(text);
                             to_read = false;
                         }

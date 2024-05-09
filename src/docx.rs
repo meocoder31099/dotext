@@ -46,8 +46,8 @@ impl Document<Docx> for Docx {
         if xml_data.len() > 0 {
             let mut to_read = false;
             loop {
-                match xml_reader.read_event(&mut buf) {
-                    Ok(Event::Start(ref e)) => match e.name() {
+                match xml_reader.read_event_into(&mut buf) {
+                    Ok(Event::Start(ref e)) => match e.name().as_ref() {
                         b"w:p" => {
                             to_read = true;
                             txt.push("\n\n".to_string());
@@ -57,7 +57,7 @@ impl Document<Docx> for Docx {
                     },
                     Ok(Event::Text(e)) => {
                         if to_read {
-                            txt.push(e.unescape_and_decode(&xml_reader).unwrap());
+                            txt.push(e.unescape().unwrap().into_owned());
                             to_read = false;
                         }
                     }
